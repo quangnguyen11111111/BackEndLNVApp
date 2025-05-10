@@ -14,6 +14,8 @@ module.exports = (sequelize) => {
         folderName: DataTypes.STRING,
         userID: DataTypes.INTEGER,
         folderStatus: { type: DataTypes.TINYINT, defaultValue: 1 },
+        dateRecomment:{ type:  DataTypes.DATE, defaultValue: new Date()},
+      numberOfVisits: { type: DataTypes.INTEGER, defaultValue: 0 },
       },
       { sequelize, modelName: "folder", tableName: "folder", timestamps: false }
     );

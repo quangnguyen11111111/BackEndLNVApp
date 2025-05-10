@@ -43,7 +43,8 @@ let handleRefreshToken = async(req,res)=>{
     return res.status(200).json({
         errCode:data.errCode,
         message:data.message,
-        accessToken:data.newAccessToken 
+        accessToken:data.newAccessToken,
+        data:data.data
     })
 } 
 //đăng nhập bằng google

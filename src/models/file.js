@@ -16,6 +16,7 @@ module.exports = (sequelize) => {
         autoIncrement: true,
       },
       folderID: DataTypes.INTEGER,
+      fileName:DataTypes.STRING,
       fileStatus: { type: DataTypes.TINYINT, defaultValue: 1 },
       fileAction: { type: DataTypes.TINYINT, defaultValue: 1 },
     },

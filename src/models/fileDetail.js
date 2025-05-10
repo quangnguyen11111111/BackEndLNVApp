@@ -11,7 +11,12 @@ module.exports = (sequelize) => {
     }
     fileDetail.init(
       {
-        fileID: { type: DataTypes.INTEGER, primaryKey: true },
+        detailID: {
+                type: DataTypes.INTEGER,
+                primaryKey: true,
+                autoIncrement: true,
+              },
+        fileID: { type: DataTypes.INTEGER },
         fileSource: DataTypes.STRING,
         fileTarget: DataTypes.STRING,
         fileDetailStatus: { type: DataTypes.TINYINT, defaultValue: 1 },
