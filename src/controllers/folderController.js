@@ -52,9 +52,59 @@ let handleGetFolderDetail = async(req,res)=>{``
         folderID:data.data.folderID
     })
 }
+//hàm cập nhật lại tên folder
+let handleUpdateFolderName = async (req, res) => {
+    if (!req.body.folderID ) {
+        return res.status(500).json({
+            errCode: 1,
+            message: "Vui lòng truyền id thư mục"
+        });
+    }
+    if ( !req.body.newFolderName) {
+        return res.status(500).json({
+            errCode: 1,
+            message: "Vui lòng truyền tên thư mục mới"
+        });
+    }
+    if (!req.body.userID) {
+        return res.status(500).json({
+            errCode: 1,
+            message: "Vui lòng truyền mã người dùng"
+        });
+    }
+    let data = await folderService.updateFolderNameService(req.body.folderID, req.body.newFolderName, req.body.userID);
+    return res.status(200).json({
+        errCode: data.errCode,
+        message: data.message,
+        data: data.data
+    });
+};
+// hàm xóa folder
+let handleDeleteFolder = async (req, res) => {
+    if (!req.query.folderID) {
+        return res.status(500).json({
+            errCode: 1,
+            message: "Vui lòng truyền id thư mục"
+        });
+    }
+    if (!req.query.userID) {
+        return res.status(500).json({
+            errCode: 1,
+            message: "Vui lòng truyền mã người dùng"
+        });
+    }
+    let data = await folderService.deleteFolderService(req.query.folderID, req.query.userID);
+    return res.status(200).json({
+        errCode: data.errCode,
+        message: data.message,
+        data: data.data
+    });
+};
 module.exports={
     handleGetAllFoldersUser:handleGetAllFoldersUser,
     handleGetAllFoldersExceptUser:handleGetAllFoldersExceptUser,
     handleCreateFolder:handleCreateFolder,
-    handleGetFolderDetail:handleGetFolderDetail
+    handleGetFolderDetail:handleGetFolderDetail,
+    handleUpdateFolderName:handleUpdateFolderName,
+    handleDeleteFolder:handleDeleteFolder
 }

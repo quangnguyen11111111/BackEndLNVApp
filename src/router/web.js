@@ -14,9 +14,13 @@ let initWebRoutes = (app) => {
   router.get('/api/getAllFoldersExceptUser',folderController.handleGetAllFoldersExceptUser)// lấy dữ liệu folder trừ người dùng
   router.post('/api/createNewFolder',folderController.handleCreateFolder)// tạo folder mới
   router.get('/api/getFolderDetail',folderController.handleGetFolderDetail)// lấy chi tiết của folder
+  router.post('/api/updateFolderName',folderController.handleUpdateFolderName)// cập nhật lại tên folder
+  router.delete('/api/deleteFolder',folderController.handleDeleteFolder)// xóa folder
   //file
   router.get('/api/getAllDetailFile',fileController.handleGetAllDetailFile)// lấy dữ liệu chi tiết của file
-  router.post('/api/createNewFile', fileController.handleCreateFile)
+  router.post('/api/createNewFile', fileController.handleCreateFile)// tạo file mới
+  router.post('/api/updateFile', fileController.handleUpdateFile)// cập nhật file
+  router.delete('/api/deleteFile', fileController.handleDeleteFile)// xóa file
   return app.use("/", router)
 };
 

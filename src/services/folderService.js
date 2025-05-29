@@ -92,7 +92,17 @@ let createFolderService = (dataBody) => {
         if (createFolder) {
           data.errCode = 0;
           data.message = "Tạo thư mục thành công";
-          data.data = createFolder;
+          data.data = {
+            folderID:createFolder.folderID,
+            folderName:createFolder.folderName ,
+            userID:createFolder.userID,
+            folderStatus:createFolder.folderStatus,
+            dateRecomment:createFolder.dateRecomment,
+            numberOfVisits:createFolder.numberOfVisits,
+             user:{
+            userName: dataBody.userName,
+          }
+          };
         }
       } else {
         data.errCode = 1;
@@ -127,7 +137,7 @@ let getFolderDetailService = (folderID,userID)=>{
                 include: [
                   {
                     model: db.file,
-                    attributes: ['fileName','fileID'] ,
+                    attributes: ['fileName','fileID','folderID'] ,
                   },
                 ],
                 raw:false
@@ -154,9 +164,70 @@ let getFolderDetailService = (folderID,userID)=>{
         }
     })
 }
+//Hàm cập nhật lại tên folder
+let updateFolderNameService = (folderID, newFolderName, userID) => {
+  return new Promise(async (resolve, reject) => {
+    try {
+      let data = {};
+
+      let isFolderNameAvailable = await checkFolder(newFolderName, userID);
+      if (isFolderNameAvailable) {
+        let updatedFolder = await db.folder.update(
+          { folderName: newFolderName },
+          { where: { folderID, userID } }
+        );
+        if (updatedFolder[0] > 0) {
+          data.errCode = 0;
+          data.message = "Cập nhật tên thư mục thành công";
+          data.data={
+            folderID: folderID,
+            newFolderName: newFolderName,
+          }
+        } else {
+          data.errCode = 1;
+          data.message = "Không tìm thấy thư mục để cập nhật";
+        }
+      } else {
+        data.errCode = 2;
+        data.message = "Tên thư mục đã tồn tại";
+      }
+      resolve(data);
+    } catch (e) {
+      reject(e);
+    }
+  });
+};
+// Hàm xóa folder
+let deleteFolderService = (folderID, userID) => {
+  return new Promise(async (resolve, reject) => {
+    try {
+      let data = {};
+      let folder = await db.folder.findOne({
+        where: { folderID, userID },
+      });
+
+      if (folder) {
+        await db.folder.destroy({
+          where: { folderID, userID },
+        });
+        data.errCode = 0;
+        data.message = "Xóa thư mục thành công";
+        data.data = folderID
+      } else {
+        data.errCode = 1;
+        data.message = "Không tìm thấy thư mục để xóa";
+      }
+      resolve(data);
+    } catch (e) {
+      reject(e);
+    }
+  });
+};
 module.exports = {
   getAllFoldersServiceUser: getAllFoldersServiceUser,
   getAllFoldersExceptUserService: getAllFoldersExceptUserService,
   createFolderService: createFolderService,
-  getFolderDetailService:getFolderDetailService
+  getFolderDetailService:getFolderDetailService,
+  updateFolderNameService:updateFolderNameService,
+  deleteFolderService:deleteFolderService
 };
