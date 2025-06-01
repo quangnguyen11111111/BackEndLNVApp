@@ -16,6 +16,7 @@ let initWebRoutes = (app) => {
   router.get('/api/getFolderDetail',folderController.handleGetFolderDetail)// lấy chi tiết của folder
   router.post('/api/updateFolderName',folderController.handleUpdateFolderName)// cập nhật lại tên folder
   router.delete('/api/deleteFolder',folderController.handleDeleteFolder)// xóa folder
+  router.get('/api/searchFolder',folderController.handleSearchFolders)// tìm kiếm folder theo tên
   //file
   router.get('/api/getAllDetailFile',fileController.handleGetAllDetailFile)// lấy dữ liệu chi tiết của file
   router.post('/api/createNewFile', fileController.handleCreateFile)// tạo file mới

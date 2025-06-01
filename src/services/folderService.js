@@ -1,28 +1,30 @@
 import { Op } from "sequelize";
 import db from "../models/index";
 // hàm lấy dữ liệu tất cả folder của 1 người
-let getAllFoldersServiceUser = (userID) => {
+let getAllFoldersServiceUser = (userID, offset , limit ) => {
   return new Promise(async (resolve, reject) => {
     try {
       let data = {};
+      let offsetInt = parseInt(offset);
+      let limitInt = parseInt(limit);
       let folders = await db.folder.findAll({
         where: { userID },
         order: [["dateRecomment", "DESC"]],
-        include: [
-          {
-            model: db.users,
-            attributes: ['userName'] ,
-          },
-        ],
-        raw:false
+        include: [{ model: db.users, attributes: ['userName'] }],
+        offset: offsetInt, // Sử dụng offset
+        limit: limitInt, // Sử dụng limit
+        raw: false,
       });
+
       if (folders) {
         data.errCode = 0;
         data.data = folders;
+        data.offset = offsetInt;
       } else {
         data.errCode = 1;
         data.data = [];
       }
+
       resolve(data);
     } catch (e) {
       reject(e);
@@ -30,28 +32,30 @@ let getAllFoldersServiceUser = (userID) => {
   });
 };
 // hàm lấy dữ liệu tất cả các folder trừ của người dùng
-let getAllFoldersExceptUserService = (userID) => {
+let getAllFoldersExceptUserService = (userID, offset , limit) => {
   return new Promise(async (resolve, reject) => {
     try {
       let data = {};
+      let offsetInt = parseInt(offset);
+      let limitInt = parseInt(limit);
       let folders = await db.folder.findAll({
-        where: { userID: { [Op.ne]: userID } },
-        order: [["numberOfVisits", "DESC"]],
-        include: [
-          {
-            model: db.users,
-            attributes: ['userName'] ,
-          },
-        ],
-        raw:false
+       where: { userID: { [Op.ne]: userID } },
+        order: [["dateRecomment", "DESC"]],
+        include: [{ model: db.users, attributes: ['userName'] }],
+        offset: offsetInt, // Sử dụng offset
+        limit: limitInt, // Sử dụng limit
+        raw: false,
       });
+
       if (folders) {
-        data.errCode = 1;
-        data.data = folders;
-      } else {
         data.errCode = 0;
+        data.data = folders;
+        data.offset = offsetInt;
+      } else {
+        data.errCode = 1;
         data.data = [];
       }
+
       resolve(data);
     } catch (e) {
       reject(e);
@@ -127,43 +131,101 @@ const updateFolderTimestamp = async (folderID) => {
   );
 };
 //hàm lấy dữ liệu chi tiết của từng folder
-let getFolderDetailService = (folderID,userID)=>{
-    return new Promise(async(resolve, reject) => {
-        try {
-            let data={}
-            let folderDetail = await db.folder.findOne({
-                where: { folderID },
-                attributes: ['folderName','userID','folderID'], 
-                include: [
-                  {
-                    model: db.file,
-                    attributes: ['fileName','fileID','folderID'] ,
-                  },
-                ],
-                raw:false
-              });
-            if (folderDetail) {
+// let getFolderDetailService = (folderID,userID,offset , limit)=>{
+//     return new Promise(async(resolve, reject) => {
+//         try {
+//             let data={}
+//                   let offsetInt = parseInt(offset);
+//       let limitInt = parseInt(limit);
+//             let folderDetail = await db.folder.findOne({
+//                 where: { folderID },
+//                 attributes: ['folderName','userID','folderID'], 
+//                 include: [
+//                   {
+//                     model: db.file,
+//                     attributes: ['fileName','fileID','folderID'] ,
+//                   },
+//                 ],
+//                  offset: offsetInt, // Sử dụng offset
+//         limit: limitInt, // Sử dụng limit
+//                 raw:false
+//               });
+//             if (folderDetail) {
                 
-                if (folderDetail.userID == userID) {
-                    await updateFolderTimestamp(folderID)
-                }else{
-                    await db.folder.increment('numberOfVisits',{
-                        by:1,
-                        where:{folderID}
-                    })
-                }
-                data.errCode=0
-                data.data = folderDetail
-            } else{
-                data.errCode=1
-                data.data = []
-            }
-            resolve(data)
-        } catch (e) {
-            reject(e)
-        }
-    })
-}
+//                 if (folderDetail.userID == userID) {
+//                     await updateFolderTimestamp(folderID)
+//                 }else{
+//                     await db.folder.increment('numberOfVisits',{
+//                         by:1,
+//                         where:{folderID}
+//                     })
+//                 }
+//                 data.errCode=0
+//                 data.data = folderDetail,
+//                 data.offset = offsetInt;
+//             } else{
+//                 data.errCode=1
+//                 data.data = []
+//             }
+//             resolve(data)
+//         } catch (e) {
+//             reject(e)
+//         }
+//     })
+// }
+let getFolderDetailService = (folderID, userID, offset, limit) => {
+  return new Promise(async (resolve, reject) => {
+    try {
+      let data = {};
+      let offsetInt = parseInt(offset);
+      let limitInt = parseInt(limit);
+
+      // Lấy thông tin folder
+      let folder = await db.folder.findOne({
+        where: { folderID },
+        attributes: ['folderName', 'userID', 'folderID'],
+        raw: false,
+      });
+
+      if (!folder) {
+        data.errCode = 1;
+        data.data = [];
+        return resolve(data);
+      }
+
+      // Cập nhật timestamp hoặc lượt xem
+      if (folder.userID == userID) {
+        await updateFolderTimestamp(folderID);
+      } else {
+        await db.folder.increment('numberOfVisits', {
+          by: 1,
+          where: { folderID },
+        });
+      }
+
+      // Lấy danh sách file trong folder có phân trang
+      const files = await db.file.findAll({
+        where: { folderID },
+        attributes: ['fileName', 'fileID', 'folderID'],
+        offset: offsetInt,
+        limit: limitInt
+      });
+
+      data.errCode = 0; 
+      data.data = {
+        folderName: folder.folderName,
+        folderID: folder.folderID,
+        userID: folder.userID,
+        files: files,
+      };
+      data.offset = offsetInt;
+
+      resolve(data);
+    } catch (e) {
+      reject(e);
+    }
+  });
+};
 //Hàm cập nhật lại tên folder
 let updateFolderNameService = (folderID, newFolderName, userID) => {
   return new Promise(async (resolve, reject) => {
@@ -223,11 +285,49 @@ let deleteFolderService = (folderID, userID) => {
     }
   });
 };
+
+// Hàm tìm kiếm dữ liệu theo từ khóa và bảng
+let searchFoldersService = (key, userID) => {
+  return new Promise(async (resolve, reject) => {
+    try {
+      let data = {};
+      let folders = await db.folder.findAll({
+        where: {
+          userID,
+          folderName: { [Op.like]: `%${key}%` },
+        },
+        order: [["dateRecomment", "DESC"]],
+        include: [
+          {
+            model: db.users,
+            attributes: ['userName'],
+          },
+        ],
+        raw: false,
+      });
+
+      if (folders && folders.length > 0) {
+        data.errCode = 0;
+        data.data = folders;
+      } else {
+        data.errCode = 1;
+        data.data = [];
+        data.message = "Không tìm thấy thư mục phù hợp";
+      }
+
+      resolve(data);
+    } catch (e) {
+      reject(e);
+    }
+  });
+};
 module.exports = {
   getAllFoldersServiceUser: getAllFoldersServiceUser,
   getAllFoldersExceptUserService: getAllFoldersExceptUserService,
   createFolderService: createFolderService,
   getFolderDetailService:getFolderDetailService,
   updateFolderNameService:updateFolderNameService,
-  deleteFolderService:deleteFolderService
+  deleteFolderService:deleteFolderService,
+  searchFoldersService:searchFoldersService
 };
+

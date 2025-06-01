@@ -92,50 +92,92 @@ let updateFileService = (fileID, dataBody) => {
   return new Promise(async (resolve, reject) => {
     try {
       let data = {};
+
       let file = await db.file.findOne({
         where: { fileID },
       });
-      if (file) {
-        // Check if the file name already exists in the target folder
-        let checkFileInTargetFolder = await checkFile(dataBody.fileName, dataBody.folderID);
-        if (!checkFileInTargetFolder) {
-          data.errCode = 2;
-          data.message = "File đã tồn tại trong thư mục đích";
-        } else {
-          await db.file.update(
+
+      if (!file) {
+        data.errCode = 1;
+        data.message = "File không tồn tại";
+        return resolve(data);
+      }
+
+      const isSameFileName = file.fileName === dataBody.fileName;
+
+      // Trường hợp KHÔNG đổi tên file → chỉ cập nhật nội dung
+      if (isSameFileName) {
+        await db.file.update(
         {
-          fileName: dataBody.fileName,
-          folderID: dataBody.folderID, // Update folderID if provided
+          folderID: dataBody.folderID,
         },
         {
           where: { fileID },
         }
-          );
-          if (Array.isArray(dataBody.arrDataDetail)) {
-        await db.fileDetail.destroy({
-          where: { fileID },
-        });
-        await addDetailFile(dataBody.arrDataDetail, fileID);
-          }
-          data.errCode = 0;
-          data.message = "Chỉnh sửa file thành công";
-          data.data = {
+      );
+        if (Array.isArray(dataBody.arrDataDetail)) {
+          await db.fileDetail.destroy({ where: { fileID } });
+          await addDetailFile(dataBody.arrDataDetail, fileID);
+        }
+
+        data.errCode = 0;
+        data.message = "Cập nhật nội dung file thành công";
+        data.data = {
         fileID: file.fileID,
         fileName: dataBody.fileName,
         folderID: dataBody.folderID,
         arrDataDetail: dataBody.arrDataDetail,
-          };
-        }
-      } else {
-        data.errCode = 1;
-        data.message = "File không tồn tại";
+      };
+        return resolve(data);
       }
+
+      // Trường hợp ĐỔI TÊN file → kiểm tra trùng tên trong cùng thư mục
+      let checkFileInTargetFolder = await db.file.findOne({
+        where: {
+          fileName: dataBody.fileName,
+          folderID: dataBody.folderID,
+        },
+      });
+
+      if (checkFileInTargetFolder) {
+        data.errCode = 2;
+        data.message = "Tên file đã tồn tại trong thư mục đích";
+        return resolve(data);
+      }
+
+      // Cập nhật tên file và thư mục
+      await db.file.update(
+        {
+          fileName: dataBody.fileName,
+          folderID: dataBody.folderID,
+        },
+        {
+          where: { fileID },
+        }
+      );
+
+      // Cập nhật chi tiết file nếu có
+      if (Array.isArray(dataBody.arrDataDetail)) {
+        await db.fileDetail.destroy({ where: { fileID } });
+        await addDetailFile(dataBody.arrDataDetail, fileID);
+      }
+
+      data.errCode = 0;
+      data.message = "Đã cập nhật tên và nội dung file thành công";
+      data.data = {
+        fileID: file.fileID,
+        fileName: dataBody.fileName,
+        folderID: dataBody.folderID,
+        arrDataDetail: dataBody.arrDataDetail,
+      };
+
       resolve(data);
     } catch (e) {
       reject(e);
     }
   });
 };
+
 //Hàm xóa file
 let deleteFileService = (fileID) => {
   return new Promise(async (resolve, reject) => {
