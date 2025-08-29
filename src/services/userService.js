@@ -1,8 +1,9 @@
 import db from "../models/index";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import { OAuth2Client } from "google-auth-library";
 const salt = bcrypt.genSaltSync(10);
-
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 //Create account
 let createNewUsers = (dataBody) => {
   return new Promise(async (resolve, reject) => {
@@ -169,12 +170,15 @@ let refreshToken = (dataBody) => {
   });
 };
 //Hàm xử lí đăng nhập bằng google
-let loginWithGoogleService = (dataBody) => {
+let loginWithGoogleService = (datadody) => {
   return new Promise(async (resolve, reject) => {
     try {
+      let dataBody= await verifyGoogleToken(datadody);
+      console.log("đây là data boy",dataBody);
+      
       let data = {};
       let user = await db.users.findOne({
-        where: { userAccount: dataBody.userAccount },
+        where: { userAccount: dataBody.userAccount }, 
         raw: true,
       });
       if (user) {
@@ -218,6 +222,21 @@ let loginWithGoogleService = (dataBody) => {
       reject(e);
     }
   });
+};
+ const verifyGoogleToken = async (idToken) => {
+  const ticket = await client.verifyIdToken({
+    idToken,
+    audience: process.env.GOOGLE_CLIENT_ID, // client_id của bạn
+  });
+
+  const payload = ticket.getPayload();
+  return {
+    userAccount: payload?.email,
+    userGmail: payload?.email,
+    userName: payload?.name,
+    picture: payload?.picture,
+    sub: payload?.sub, // user id của Google
+  };
 };
 module.exports = {
   createNewUsers: createNewUsers,

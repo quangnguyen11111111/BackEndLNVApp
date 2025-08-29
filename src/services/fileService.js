@@ -89,6 +89,6 @@ let addDetailFile = async (dataBody, fileID) => {
   };
   
 module.exports={
-    getAllDetailFileService:getAllDetailFileService,
+    getAllDetailFileService:getAllDetailFileService, 
     createFileService:createFileService
 }

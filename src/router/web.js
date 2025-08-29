@@ -20,5 +20,5 @@ let initWebRoutes = (app) => {
   return app.use("/", router)
 };
 
-module.exports = initWebRoutes;
+module.exports = initWebRoutes; 
  

@@ -55,7 +55,7 @@ let handleLoginWithGoogle=async(req,res)=>{
             message:"Không được để trống dữ liệu"
         })
     }
-    let data = await userService.loginWithGoogleService(req.body)
+    let data = await userService.loginWithGoogleService(req.body.token)
     return res.status(200).json({
         errCode:data.errCode,
         message:data.message,
